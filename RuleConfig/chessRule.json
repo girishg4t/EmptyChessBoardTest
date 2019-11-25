@@ -1,0 +1,11 @@
+{
+	"king": {
+		"pieceActions": ["HL","HR","VT","VB","UL","UR","DL","DR"],
+		"steps": 1
+	},
+	"pawn": {
+		"pieceActions": ["VT", "UL", "UR"],
+		"steps": 1
+	}
+
+}
