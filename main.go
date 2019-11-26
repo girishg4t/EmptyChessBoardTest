@@ -29,7 +29,7 @@ type Rule struct {
 }
 
 func main() {
-	result := getChessMoves("queen", "D5")
+	result := getChessMoves("king", "D5")
 	fmt.Println(result)
 }
 
@@ -40,39 +40,17 @@ func check(e error) {
 }
 
 func getChessMoves(chessPiece string, location string) []string {
-	m := make(PieceMoveMap)
-	m["HL"] = moveHorizontalLeft
-	m["HR"] = moveHorizontalRight
-	m["VT"] = moveVerticalTop
-	m["VB"] = moveVerticalBottom
-	m["UL"] = moveUpLeft
-	m["UR"] = moveUpRight
-	m["DL"] = moveDownLeft
-	m["DR"] = moveDownRight
-
-	var moves []string
 	rule := readBundleConfig(chessPiece)
+	m := getPieceMoveMapping()
 	currentCoordinate := converStringtoCoordinates(location)
 	if chessPiece != "horse" {
-		for _, action := range rule.PieceActions.([]interface{}) {
-			if rule.Steps != 1 {
-				for i := 1; i <= rule.Steps; i++ {
-					moves = addValidCoordinateAfterMove(moves, currentCoordinate, m[action.(string)], i)
-				}
-			} else {
-				moves = addValidCoordinateAfterMove(moves, currentCoordinate, m[action.(string)], rule.Steps)
-			}
-		}
-	} else {
-		for k, v := range rule.PieceActions.(map[string]interface{}) {
-			newCoordinate := m[k](rule.Steps, currentCoordinate)
-			for _, innerAction := range v.([]interface{}) {
-				moves = addValidCoordinateAfterMove(moves, newCoordinate, m[innerAction.(string)], rule.Steps)
-			}
-		}
+		return addValidCoordinateAfterMove(currentCoordinate, rule, rule.PieceActions, m)
 	}
-
-	return moves
+	for k, v := range rule.PieceActions.(map[string]interface{}) {
+		newCoordinate := m[k](rule.Steps, currentCoordinate)
+		return addValidCoordinateAfterMove(newCoordinate, rule, v, m)
+	}
+	return []string{}
 }
 
 func readBundleConfig(chessPiece string) Rule {
@@ -108,11 +86,28 @@ func converStringtoCoordinates(str string) Coordinate {
 	return Coordinate{row: -1, column: -1}
 }
 
-func addValidCoordinateAfterMove(moves []string, c Coordinate, f PieceMoveFunc, steps int) []string {
-	coordinateAfterMove := f(steps, c)
-	if isCoordinateValid(coordinateAfterMove) {
-		str := converCoordinatesToString(coordinateAfterMove)
-		moves = append(moves, str)
+func getPieceMoveMapping() PieceMoveMap {
+	m := make(PieceMoveMap)
+	m["HL"] = moveHorizontalLeft
+	m["HR"] = moveHorizontalRight
+	m["VT"] = moveVerticalTop
+	m["VB"] = moveVerticalBottom
+	m["UL"] = moveUpLeft
+	m["UR"] = moveUpRight
+	m["DL"] = moveDownLeft
+	m["DR"] = moveDownRight
+	return m
+}
+func addValidCoordinateAfterMove(c Coordinate, rule Rule, actions interface{}, m PieceMoveMap) []string {
+	var moves []string
+	for _, action := range actions.([]interface{}) {
+		for i := 1; i <= rule.Steps; i++ {
+			coordinateAfterMove := m[action.(string)](rule.Steps, c)
+			if isCoordinateValid(coordinateAfterMove) {
+				str := converCoordinatesToString(coordinateAfterMove)
+				moves = append(moves, str)
+			}
+		}
 	}
 	return moves
 }
