@@ -1,11 +1,57 @@
 {
+	"queen": {
+		"pieceActions": [
+			"HL",
+			"HR",
+			"VT",
+			"VB",
+			"UL",
+			"UR",
+			"DL",
+			"DR"
+		],
+		"steps": 8
+	},
 	"king": {
-		"pieceActions": ["HL","HR","VT","VB","UL","UR","DL","DR"],
+		"pieceActions": [
+			"HL",
+			"HR",
+			"VT",
+			"VB",
+			"UL",
+			"UR",
+			"DL",
+			"DR"
+		],
 		"steps": 1
 	},
 	"pawn": {
-		"pieceActions": ["VT", "UL", "UR"],
+		"pieceActions": [
+			"VT",
+			"UL",
+			"UR"
+		],
+		"steps": 1
+	},
+	"horse": {
+		"pieceActions": {
+			"HL": [
+				"UL",
+				"DL"
+			],
+			"HR": [
+				"UR",
+				"DR"
+			],
+			"VT": [
+				"UL",
+				"UR"
+			],
+			"VB": [
+				"DL",
+				"DR"
+			]
+		},
 		"steps": 1
 	}
-
 }

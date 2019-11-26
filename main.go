@@ -18,12 +18,12 @@ type ChessRules map[string]Rule
 
 //Rule Type to read the chess rule json
 type Rule struct {
-	PieceActions []string
+	PieceActions interface{}
 	Steps        int `json:"steps"`
 }
 
 func main() {
-	result := getChessMoves("king", "D5")
+	result := getChessMoves("queen", "D5")
 	fmt.Println(result)
 }
 
@@ -37,11 +37,25 @@ func getChessMoves(chessPiece string, location string) []string {
 	var moves []string
 	rule := readBundleConfig(chessPiece)
 	currentCoordinate := converStringtoCoordinates(location)
-	for _, action := range rule.PieceActions {
-		coordinateAfterMove := pieceDirection(action, rule.Steps, currentCoordinate)
-		str := converCoordinatesToString(coordinateAfterMove)
-		moves = append(moves, str)
+	if chessPiece != "horse" {
+		for _, action := range rule.PieceActions.([]interface{}) {
+			if rule.Steps != 1 {
+				for i := 1; i <= rule.Steps; i++ {
+					moves = addValidCoordinateAfterMove(moves, currentCoordinate, action.(string), i)
+				}
+			} else {
+				moves = addValidCoordinateAfterMove(moves, currentCoordinate, action.(string), rule.Steps)
+			}
+		}
+	} else {
+		for k, v := range rule.PieceActions.(map[string]interface{}) {
+			newCoordinate := pieceDirection(k, rule.Steps, currentCoordinate)
+			for _, innerAction := range v.([]interface{}) {
+				moves = addValidCoordinateAfterMove(moves, newCoordinate, innerAction.(string), rule.Steps)
+			}
+		}
 	}
+
 	return moves
 }
 
@@ -76,6 +90,22 @@ func converStringtoCoordinates(str string) Coordinate {
 		}
 	}
 	return Coordinate{row: -1, column: -1}
+}
+
+func addValidCoordinateAfterMove(moves []string, c Coordinate, action string, steps int) []string {
+	coordinateAfterMove := pieceDirection(action, steps, c)
+	if isCoordinateValid(coordinateAfterMove) {
+		str := converCoordinatesToString(coordinateAfterMove)
+		moves = append(moves, str)
+	}
+	return moves
+}
+
+func isCoordinateValid(c Coordinate) bool {
+	if c.row > -1 && c.row < 8 && c.column > -1 && c.column < 8 {
+		return true
+	}
+	return false
 }
 
 func converCoordinatesToString(coordinate Coordinate) string {
