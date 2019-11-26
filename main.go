@@ -13,6 +13,12 @@ type Coordinate struct {
 	column int
 }
 
+//PieceMoveFunc function to calculate move
+type PieceMoveFunc func(int, Coordinate) Coordinate
+
+//PieceMoveMap to map the function
+type PieceMoveMap map[string]PieceMoveFunc
+
 //ChessRules Type to read the chess rule json
 type ChessRules map[string]Rule
 
@@ -34,6 +40,16 @@ func check(e error) {
 }
 
 func getChessMoves(chessPiece string, location string) []string {
+	m := make(PieceMoveMap)
+	m["HL"] = moveHorizontalLeft
+	m["HR"] = moveHorizontalRight
+	m["VT"] = moveVerticalTop
+	m["VB"] = moveVerticalBottom
+	m["UL"] = moveUpLeft
+	m["UR"] = moveUpRight
+	m["DL"] = moveDownLeft
+	m["DR"] = moveDownRight
+
 	var moves []string
 	rule := readBundleConfig(chessPiece)
 	currentCoordinate := converStringtoCoordinates(location)
@@ -41,17 +57,17 @@ func getChessMoves(chessPiece string, location string) []string {
 		for _, action := range rule.PieceActions.([]interface{}) {
 			if rule.Steps != 1 {
 				for i := 1; i <= rule.Steps; i++ {
-					moves = addValidCoordinateAfterMove(moves, currentCoordinate, action.(string), i)
+					moves = addValidCoordinateAfterMove(moves, currentCoordinate, m[action.(string)], i)
 				}
 			} else {
-				moves = addValidCoordinateAfterMove(moves, currentCoordinate, action.(string), rule.Steps)
+				moves = addValidCoordinateAfterMove(moves, currentCoordinate, m[action.(string)], rule.Steps)
 			}
 		}
 	} else {
 		for k, v := range rule.PieceActions.(map[string]interface{}) {
-			newCoordinate := pieceDirection(k, rule.Steps, currentCoordinate)
+			newCoordinate := m[k](rule.Steps, currentCoordinate)
 			for _, innerAction := range v.([]interface{}) {
-				moves = addValidCoordinateAfterMove(moves, newCoordinate, innerAction.(string), rule.Steps)
+				moves = addValidCoordinateAfterMove(moves, newCoordinate, m[innerAction.(string)], rule.Steps)
 			}
 		}
 	}
@@ -92,8 +108,8 @@ func converStringtoCoordinates(str string) Coordinate {
 	return Coordinate{row: -1, column: -1}
 }
 
-func addValidCoordinateAfterMove(moves []string, c Coordinate, action string, steps int) []string {
-	coordinateAfterMove := pieceDirection(action, steps, c)
+func addValidCoordinateAfterMove(moves []string, c Coordinate, f PieceMoveFunc, steps int) []string {
+	coordinateAfterMove := f(steps, c)
 	if isCoordinateValid(coordinateAfterMove) {
 		str := converCoordinatesToString(coordinateAfterMove)
 		moves = append(moves, str)
@@ -113,37 +129,39 @@ func converCoordinatesToString(coordinate Coordinate) string {
 	return boardMatrix[coordinate.row][coordinate.column]
 }
 
-func pieceDirection(action string, steps int, currentCoordinate Coordinate) Coordinate {
-	switch action {
-	case "HL":
-		c := currentCoordinate.column - steps
-		return Coordinate{row: currentCoordinate.row, column: c}
-	case "HR":
-		c := currentCoordinate.column + steps
-		return Coordinate{row: currentCoordinate.row, column: c}
-	case "VT":
-		r := currentCoordinate.row + steps
-		return Coordinate{row: r, column: currentCoordinate.column}
-	case "VB":
-		r := currentCoordinate.row - steps
-		return Coordinate{row: r, column: currentCoordinate.column}
-	case "UL":
-		c := currentCoordinate.column - steps
-		r := currentCoordinate.row + steps
-		return Coordinate{row: r, column: c}
-	case "UR":
-		r := currentCoordinate.row + steps
-		c := currentCoordinate.column + steps
-		return Coordinate{row: r, column: c}
-	case "DL":
-		r := currentCoordinate.row - steps
-		c := currentCoordinate.column - steps
-		return Coordinate{row: r, column: c}
-	case "DR":
-		c := currentCoordinate.column + steps
-		r := currentCoordinate.row - steps
-		return Coordinate{row: r, column: c}
-	default:
-		return Coordinate{row: -1, column: -1}
-	}
+func moveHorizontalLeft(steps int, currentCoordinate Coordinate) Coordinate {
+	c := currentCoordinate.column - steps
+	return Coordinate{row: currentCoordinate.row, column: c}
+}
+func moveHorizontalRight(steps int, currentCoordinate Coordinate) Coordinate {
+	c := currentCoordinate.column + steps
+	return Coordinate{row: currentCoordinate.row, column: c}
+}
+func moveVerticalTop(steps int, currentCoordinate Coordinate) Coordinate {
+	r := currentCoordinate.row + steps
+	return Coordinate{row: r, column: currentCoordinate.column}
+}
+func moveVerticalBottom(steps int, currentCoordinate Coordinate) Coordinate {
+	r := currentCoordinate.row - steps
+	return Coordinate{row: r, column: currentCoordinate.column}
+}
+func moveUpLeft(steps int, currentCoordinate Coordinate) Coordinate {
+	c := currentCoordinate.column - steps
+	r := currentCoordinate.row + steps
+	return Coordinate{row: r, column: c}
+}
+func moveUpRight(steps int, currentCoordinate Coordinate) Coordinate {
+	r := currentCoordinate.row + steps
+	c := currentCoordinate.column + steps
+	return Coordinate{row: r, column: c}
+}
+func moveDownLeft(steps int, currentCoordinate Coordinate) Coordinate {
+	r := currentCoordinate.row - steps
+	c := currentCoordinate.column - steps
+	return Coordinate{row: r, column: c}
+}
+func moveDownRight(steps int, currentCoordinate Coordinate) Coordinate {
+	c := currentCoordinate.column + steps
+	r := currentCoordinate.row - steps
+	return Coordinate{row: r, column: c}
 }
